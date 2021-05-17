@@ -128,10 +128,6 @@ class Servers(BaseModel):
     __root__ = List[Server]
 
 
-class Tags(BaseModel):
-    __root__ = List[str]
-
-
 class ExternalDocumentation(BaseModel):
     description: Optional[str] = Field(
         None,
@@ -141,6 +137,23 @@ class ExternalDocumentation(BaseModel):
         ...,
         description="The URL for the target documentation. Value MUST be in the format of a URL.",
     )
+
+
+class Tag(BaseModel):
+    name: str = Field(..., description="The name of the tag.")
+    description: Optional[str] = Field(
+        None,
+        description="A short description for the tag. CommonMark syntax MAY be used for rich text representation.",
+    )
+    external_docs: Optional[ExternalDocumentation] = Field(
+        None,
+        alias="externalDocs",
+        description="Additional external documentation for this tag.",
+    )
+
+
+class Tags(BaseModel):
+    __root__ = List[Tag]
 
 
 class ParameterLocation(str, Enum):
@@ -281,7 +294,7 @@ class RequestBody(BaseModel):
 
 
 class Operation(BaseModel):
-    tags: Tags = Field(
+    tags: List[str] = Field(
         [],
         description=(
             "A list of tags for API documentation control. Tags can be used for "
@@ -376,6 +389,20 @@ class Paths(BaseModel):
     __root__ = Dict[str, PathItem]
 
 
+class Security(BaseModel):
+    __root__ = Dict[str, List[str]]
+
+
+class Schemas(BaseModel):
+    __root__ = Dict[str, Union[Schema, Reference]]
+
+
+class Components(BaseModel):
+    schemas: Optional[Schemas] = Field(
+        None, description="An object to hold reusable Schema Objects."
+    )
+
+
 class OpenAPI(BaseModel):
     openapi: Literal["3.0.3"] = Field(
         ...,
@@ -388,7 +415,10 @@ class OpenAPI(BaseModel):
     )
     info: Info = Field(
         ...,
-        description="Provides metadata about the API. The metadata MAY be used by tooling as required.",
+        description=(
+            "Provides metadata about the API. "
+            "The metadata MAY be used by tooling as required."
+        ),
     )
     servers: Servers = Field(
         [],
@@ -400,4 +430,31 @@ class OpenAPI(BaseModel):
     )
     paths: Paths = Field(
         ..., description="The available paths and operations for the API."
+    )
+    components: Optional[Components] = Field(
+        None, description="An element to hold various schemas for the specification."
+    )
+    security: Optional[List[Security]] = Field(
+        None,
+        description=(
+            "A declaration of which security mechanisms can be used across the API. "
+            "The list of values includes alternative security requirement objects that "
+            "can be used. Only one of the security requirement objects need to be "
+            "satisfied to authorize a request. Individual operations can override this "
+            "definition. To make security optional, an empty security requirement ({}) "
+            "can be included in the array."
+        ),
+    )
+    tags: Optional[Tags] = Field(
+        None,
+        description=(
+            "A list of tags used by the specification with additional metadata. "
+            "The order of the tags can be used to reflect on their order by the "
+            "parsing tools. Not all tags that are used by the Operation Object must be "
+            "declared. The tags that are not declared MAY be organized randomly or "
+            "based on the tools' logic. Each tag name in the list MUST be unique."
+        ),
+    )
+    external_docs: Optional[ExternalDocumentation] = Field(
+        None, alias="externalDocs", description="Additional external documentation."
     )
